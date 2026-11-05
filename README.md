@@ -29,13 +29,13 @@ This project builds a current QEMU natively for arm64, emulates the x86 TV in so
 
 ```sh
 git clone <this repo> tizen-tv-emu && cd tizen-tv-emu
-./build.sh   # downloads QEMU 11.1.3 (checksum-verified), applies patches/, builds into .build/ (~10 min)
+./build.sh   # downloads QEMU 11.1.3 (checksum-verified), applies patches/, builds into .build/ (a few minutes)
 ./run.sh     # boots the TV and opens http://127.0.0.1:8765
 ```
 
 The Smart Hub home screen appears after about 90 seconds. Press Ctrl+C in the terminal to stop the TV.
 
-The TV's disks live in `~/.tizen-tv-emu`. To keep them somewhere else, set `TIZEN_TV_EMU_HOME`; if Tizen Studio isn't in `~/tizen-studio`, set `TIZEN_STUDIO`. The disks are thin overlays on Samsung's images, so installed apps persist; delete the folder to start over with a fresh TV.
+The TV's disks live in `~/.tizen-tv-emu`. To keep them somewhere else, set `TIZEN_TV_EMU_HOME`; if Tizen Studio isn't in `~/tizen-studio`, set `TIZEN_STUDIO`. The disks are thin overlays on Samsung's images, so installed apps persist. Delete the folder to start over with a fresh TV.
 
 ## Controlling the TV
 
@@ -48,7 +48,7 @@ The TV's disks live in `~/.tizen-tv-emu`. To keep them somewhere else, set `TIZE
 The TV only installs apps signed with a **Samsung** certificate that lists its device ID (DUID). A plain Tizen certificate is rejected.
 
 1. With the TV running: `~/tizen-studio/tools/sdb devices` shows `emulator-26101`.
-2. Get its DUID: `~/tizen-studio/tools/sdb -s emulator-26101 shell 0 getduid`. It stays the same as long as you keep `~/.tizen-tv-emu`.
+2. Get its DUID: `~/tizen-studio/tools/sdb -s emulator-26101 shell 0 getduid`. It doesn't come from the disk: a brand-new TV folder got the same DUID as an old one, so a certificate keeps working when you start over.
 3. In Tizen Studio's Certificate Manager, create a Samsung TV certificate (or a new distributor certificate for an existing profile) and add that DUID, plus the DUIDs of any real TVs you use.
 4. Package and install:
 

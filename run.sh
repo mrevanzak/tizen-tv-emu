@@ -26,7 +26,7 @@ if [ -z "$PLATFORM" ] || [ -z "$IMAGE" ] || [ ! -f "$KERNEL" ] || [ ! -f "$SWAP_
 fi
 VERSION=$(basename "$(dirname "$PLATFORM")" | sed 's/^tizen-//')
 
-# The disks are thin overlays on Samsung's images, so the TV keeps installed apps (and its DUID).
+# The disks are thin overlays on Samsung's images, so the TV keeps its installed apps.
 mkdir -p "$VM"
 [ -f "$VM/root.qcow2" ] || "$QEMU_IMG" create -q -f qcow2 -F qcow2 -b "$IMAGE" "$VM/root.qcow2"
 [ -f "$VM/swap.qcow2" ] || "$QEMU_IMG" create -q -f qcow2 -F qcow2 -b "$SWAP_TEMPLATE" "$VM/swap.qcow2"
