@@ -47,7 +47,7 @@ The TV's disks live in `~/.tizen-tv-emu`. To keep them somewhere else, set `TIZE
 
 The TV only installs apps signed with a **Samsung** certificate that lists its device ID (DUID). A plain Tizen certificate is rejected.
 
-1. With the TV running: `~/tizen-studio/tools/sdb devices` shows `emulator-26101`.
+1. Wait for the home screen: `sdb` connects earlier, but installs fail until the TV has finished starting. `~/tizen-studio/tools/sdb devices` then shows `emulator-26101`.
 2. Get its DUID: `~/tizen-studio/tools/sdb -s emulator-26101 shell 0 getduid`. It doesn't come from the disk: a brand-new TV folder got the same DUID as an old one, so a certificate keeps working when you start over.
 3. In Tizen Studio's Certificate Manager, create a Samsung TV certificate (or a new distributor certificate for an existing profile) and add that DUID, plus the DUIDs of any real TVs you use.
 4. Package and install:
