@@ -28,7 +28,7 @@ This project builds a current QEMU natively for arm64, emulates the x86 TV in so
 ## Install and run
 
 ```sh
-git clone <this repo> tizen-tv-emu && cd tizen-tv-emu
+git clone https://github.com/mrevanzak/tizen-tv-emu.git && cd tizen-tv-emu
 ./build.sh   # downloads QEMU 11.1.3 (checksum-verified), applies patches/, builds into .build/ (a few minutes)
 ./run.sh     # boots the TV and opens http://127.0.0.1:8765
 ```
