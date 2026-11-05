@@ -9,6 +9,8 @@ QEMU="$QEMU_SRC/build/qemu-system-x86_64"
 QEMU_IMG="$QEMU_SRC/build/qemu-img"
 STUDIO="${TIZEN_STUDIO:-$HOME/tizen-studio}"
 VM="${TIZEN_TV_EMU_HOME:-$HOME/.tizen-tv-emu}"
+# macOS caps Unix socket paths at 104 bytes, so the monitor socket can't live next to the disks.
+MONITOR="/tmp/tizen-tv-emu-$(id -u).sock"
 
 [ -x "$QEMU" ] || { echo "QEMU isn't built yet. Run ./build.sh first." >&2; exit 1; }
 
@@ -29,7 +31,7 @@ mkdir -p "$VM"
 [ -f "$VM/root.qcow2" ] || "$QEMU_IMG" create -q -f qcow2 -F qcow2 -b "$IMAGE" "$VM/root.qcow2"
 [ -f "$VM/swap.qcow2" ] || "$QEMU_IMG" create -q -f qcow2 -F qcow2 -b "$SWAP_TEMPLATE" "$VM/swap.qcow2"
 
-TIZEN_TV_EMU_MONITOR="$VM/mon.sock" \
+TIZEN_TV_EMU_MONITOR="$MONITOR" \
 TIZEN_TV_EMU_SKIN="$PLATFORM/emulator-resources/skins/tv-1920x1080/controller/Smart(2016)" \
 TIZEN_TV_EMU_KEYMAPS="$QEMU_SRC/subprojects/keycodemapdb/data/keymaps.csv" \
   python3 "$HERE/remote.py" &
@@ -49,4 +51,4 @@ echo "Booting Tizen TV $VERSION (about 90 s to the home screen). Guest log: $VM/
   -device virtio-serial -serial file:"$VM/klog.txt" -vga none \
   -device vigs,backend=gl,wsi=vigs_wsi,vblank_emulation=on -device yagl,wsi=vigs_wsi \
   -display none -vnc 127.0.0.1:0,websocket=127.0.0.1:5700 \
-  -monitor unix:"$VM/mon.sock",server,nowait -rtc base=utc "$@"
+  -monitor unix:"$MONITOR",server,nowait -rtc base=utc "$@"
