@@ -37,7 +37,8 @@ if [ ! -d "$SRC" ]; then
 fi
 
 # i386 for the 32-bit TV images (Tizen 9.0 and older): YaGL reads guest pointers at the target's width.
-CONFIGURE_ARGS="--target-list=x86_64-softmmu,i386-softmmu --enable-slirp --disable-docs --disable-werror --disable-sdl --disable-gtk"
+# Optional libraries are off, so the build only needs the Homebrew packages listed above.
+CONFIGURE_ARGS="--target-list=x86_64-softmmu,i386-softmmu --enable-slirp --disable-docs --disable-werror --disable-sdl --disable-gtk --disable-capstone --disable-gnutls --disable-vnc-jpeg --disable-png --disable-libssh --disable-libusb --disable-zstd --disable-gcrypt --disable-nettle"
 if [ "$(cat "$SRC/build/.configure-args" 2>/dev/null)" != "$CONFIGURE_ARGS" ]; then
   mkdir -p "$SRC/build"
   # shellcheck disable=SC2086 # CONFIGURE_ARGS is a list of flags
