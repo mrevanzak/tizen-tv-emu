@@ -2,7 +2,7 @@
 
 Runs the Samsung Tizen TV emulator image from Tizen Studio on Apple Silicon Macs, with the TV screen and a Samsung Smart Remote side by side in your browser. You can install, run and debug TV web apps with Tizen Studio's usual `sdb` and `tizen` commands.
 
-Not affiliated with or supported by Samsung. Tested with Tizen Studio 6.5's **TV 10.0** image on macOS (arm64).
+Not affiliated with or supported by Samsung. Tested on macOS (arm64) with the **TV 10.0** image (2026 TVs) and the **TV 6.0** image (2021 TVs).
 
 ## Why this exists
 
@@ -25,6 +25,19 @@ This project builds a current QEMU natively for arm64, emulates the x86 TV in so
 
   `TV-SAMSUNG-Public-Emulator` provides the TV image, kernel and remote skin; `Emulator` provides the swap disk template. Read Samsung's license when the Package Manager shows it. Nothing from Samsung is included in this repository.
 
+### Older TV images
+
+The Package Manager only offers the newest TV image. To match an older TV, download its "TV Extension Image" from Samsung's [TV extension archive](https://developer.samsung.com/smarttv/develop/tools/tv-extension/archive.html) (Tizen 6.0 is the 2021 TVs, 6.5 is 2022). Then copy just its emulator image, kernel and resources into Tizen Studio:
+
+```sh
+mkdir tv-image && cd tv-image
+unzip <downloaded>.zip 'binary/tv-samsung-public-emulator-image-*' 'binary/tv-samsung-emulator-kernel-*' 'binary/tv-samsung-emulator-resources_*'
+for z in binary/*.zip; do unzip -oq "$z" 'data/*' -d x; done
+rsync -a --ignore-existing x/data/ ~/tizen-studio/
+```
+
+This adds `platforms/tizen-<version>/tv-samsung/emulator*` folders and leaves existing files alone. The `Emulator` package from above is still needed for the swap disk.
+
 ## Install and run
 
 ```sh
@@ -33,9 +46,11 @@ git clone https://github.com/mrevanzak/tizen-tv-emu.git && cd tizen-tv-emu
 ./run.sh     # boots the TV and opens http://127.0.0.1:8765
 ```
 
-The Smart Hub home screen appears after about 90 seconds. Press Ctrl+C in the terminal to stop the TV.
+The Smart Hub home screen appears after about 90 seconds. Press Ctrl+C in the terminal to stop the TV. Older images may start on the Live TV channel's test pattern; press Smart Hub on the remote.
 
-The TV's disks live in `~/.tizen-tv-emu`. To keep them somewhere else, set `TIZEN_TV_EMU_HOME`; if Tizen Studio isn't in `~/tizen-studio`, set `TIZEN_STUDIO`. The disks are thin overlays on Samsung's images, so installed apps persist. Delete the folder to start over with a fresh TV.
+`run.sh` boots the newest TV image installed. For another one: `TIZEN_TV_VERSION=6.0 ./run.sh`.
+
+Each TV version keeps its disks in `~/.tizen-tv-emu/<version>`. To keep them somewhere else, set `TIZEN_TV_EMU_HOME`; if Tizen Studio isn't in `~/tizen-studio`, set `TIZEN_STUDIO`. The disks are thin overlays on Samsung's images, so installed apps persist. Delete a version's folder to start that TV over.
 
 ## Controlling the TV
 
@@ -48,7 +63,7 @@ The TV's disks live in `~/.tizen-tv-emu`. To keep them somewhere else, set `TIZE
 The TV only installs apps signed with a **Samsung** certificate that lists its device ID (DUID). A plain Tizen certificate is rejected.
 
 1. Wait for the home screen: `sdb` connects earlier, but installs fail until the TV has finished starting. `~/tizen-studio/tools/sdb devices` then shows `emulator-26101`.
-2. Get its DUID: `~/tizen-studio/tools/sdb -s emulator-26101 shell 0 getduid`. It doesn't come from the disk: a brand-new TV folder got the same DUID as an old one, so a certificate keeps working when you start over.
+2. Get its DUID: `~/tizen-studio/tools/sdb -s emulator-26101 shell 0 getduid`. It depends on the TV version (the 10.0 and 6.0 images have different ones), not on the disk, so a certificate keeps working when you start a TV over.
 3. In Tizen Studio's Certificate Manager, create a Samsung TV certificate (or a new distributor certificate for an existing profile) and add that DUID, plus the DUIDs of any real TVs you use.
 4. Package and install:
 
@@ -85,7 +100,7 @@ Then open `http://127.0.0.1:9333/json` and use the `devtoolsFrontendUrl`, or any
 1. `hw/vigs`: Samsung's VIGS device, moved to the QEMU 11 device and console APIs. It always draws into QEMU's console surface, which QEMU then serves over VNC.
 2. `hw/yagl`: Samsung's YaGL device. A small compatibility header maps the QEMU 2.8 memory helpers it used onto QEMU 11's APIs.
 
-`run.sh` starts QEMU with a standard `pc` machine and both devices, and serves the screen over a local-only VNC websocket. `remote.py` serves the page that shows that screen (via noVNC) next to Samsung's remote skin, and sends each button's key code from Samsung's `layout.xml` to the TV through QEMU's monitor.
+`run.sh` starts QEMU with a standard `pc` machine and both devices, and serves the screen over a local-only VNC websocket. Images up to 9.0 are 32-bit, so they run on `qemu-system-i386`: YaGL reads guest pointers at the target's width. The kernel gets `nosmap` because Samsung's `lwipc` driver in older images reads user memory directly, which panics on a CPU with SMAP. `remote.py` serves the page that shows that screen (via noVNC) next to Samsung's remote skin, and sends each button's key code from Samsung's `layout.xml` to the TV through QEMU's monitor.
 
 The VIGS and YaGL sources come from the `tizen_studio_6.5_p10.0` branch of Samsung's Tizen QEMU fork. At the time of porting, `git.tizen.org` was unreachable, so they were taken from the GitHub mirror `CrazyBoy2014/tizen-qemu`.
 

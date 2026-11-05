@@ -2,7 +2,7 @@
 """TV screen and Samsung remote side by side: http://127.0.0.1:8765
 
 The screen is QEMU's VNC output (websocket on :5700) drawn by noVNC. The remote is
-Samsung's own "Smart (2016)" controller skin from Tizen Studio; each button sends the
+Samsung's own controller skin from Tizen Studio (Smart 2016 where available); each button sends the
 Linux keycode from its layout.xml to the guest through QEMU's monitor (`sendkey`).
 shortcut: buttons whose keycode has no PS/2 equivalent (Extra, Play/Pause, long-press
 Exit) are left inactive; port Samsung's virtio-maru-keyboard device if they are needed.
@@ -22,12 +22,14 @@ KEYMAPS = os.environ["TIZEN_TV_EMU_KEYMAPS"]
 LAYOUT_NS = {"u": "http://www.tizen.org/emulator/ui/layout"}
 
 
-def load_buttons():
-    """Remote buttons from Samsung's layout.xml, with the QEMU qcode for each keycode."""
+def load_skin():
+    """Samsung's layout.xml: the remote's two images, and each button with its QEMU qcode."""
     with open(KEYMAPS) as f:
         qcode_by_linux = {int(row["Linux Keycode"], 0): row["QEMU QKeyCode"]
                           for row in csv.DictReader(f) if row["Linux Keycode"]}
     root = ET.parse(os.path.join(SKIN, "layout.xml")).getroot()
+    normal = root.findtext(".//u:normalImage", namespaces=LAYOUT_NS)
+    pressed = root.findtext(".//u:pressedImage", namespaces=LAYOUT_NS)
     buttons = []
     for key in root.iter("{%s}key" % LAYOUT_NS["u"]):
         region = {k: int(v) for k, v in key.find("u:region", LAYOUT_NS).attrib.items()}
@@ -37,22 +39,30 @@ def load_buttons():
             "qcode": qcode_by_linux.get(keycode) or None,
             **region,
         })
-    return buttons
+    return normal, pressed, buttons
 
 
-BUTTONS = load_buttons()
+def png_size(path):
+    with open(path, "rb") as f:
+        header = f.read(24)  # width and height are big-endian ints at bytes 16-23 of a PNG
+    return int.from_bytes(header[16:20], "big"), int.from_bytes(header[20:24], "big")
+
+
+NORMAL_IMAGE, PRESSED_IMAGE, BUTTONS = load_skin()
+WIDTH, HEIGHT = png_size(os.path.join(SKIN, NORMAL_IMAGE))
 QCODES = {b["qcode"] for b in BUTTONS if b["qcode"]}
+SKIN_FILES = {"/skin/normal.png": NORMAL_IMAGE, "/skin/pressed.png": PRESSED_IMAGE}
 
 PAGE = """<!doctype html><meta charset=utf-8><title>Tizen TV</title>
 <style>
 html,body{margin:0;height:100%;background:#111;overflow:hidden}
 body{display:flex;gap:16px;padding:16px;box-sizing:border-box}
 #tv{flex:1;min-width:0;background:#000;border-radius:6px}
-#remote{position:relative;width:101px;height:469px;transform-origin:top left;
-  background:url(/skin/smart_2016_nml.png)}
+#remote{position:relative;width:WIDTHpx;height:HEIGHTpx;transform-origin:top left;
+  background:url(/skin/normal.png)}
 #holder{flex:none}
 .k{position:absolute;cursor:pointer;border-radius:50%}
-.k:active{background-image:url(/skin/smart_2016_pushed.png)}
+.k:active{background-image:url(/skin/pressed.png)}
 .k.off{cursor:not-allowed}
 </style>
 <div id=tv></div>
@@ -76,16 +86,16 @@ for (const b of buttons) {
   remote.append(el);
 }
 function fitRemoteToWindow() {
-  const scale = (innerHeight - 32) / 469;
+  const scale = (innerHeight - 32) / HEIGHT;
   remote.style.transform = 'scale(' + scale + ')';
-  remote.parentElement.style.width = 101 * scale + 'px';
+  remote.parentElement.style.width = WIDTH * scale + 'px';
 }
 addEventListener('resize', fitRemoteToWindow);
 fitRemoteToWindow();
 const rfb = new RFB(document.getElementById('tv'), 'ws://127.0.0.1:5700');
 rfb.scaleViewport = true;
 rfb.addEventListener('disconnect', function reconnectSoon() { setTimeout(function () { location.reload(); }, 2000); });
-</script>""".replace("BUTTONS_JSON", json.dumps(BUTTONS))
+</script>""".replace("BUTTONS_JSON", json.dumps(BUTTONS)).replace("WIDTH", str(WIDTH)).replace("HEIGHT", str(HEIGHT))
 
 
 def send_key(qcode):
@@ -98,8 +108,8 @@ def send_key(qcode):
 
 class Handler(http.server.BaseHTTPRequestHandler):
     def do_GET(self):
-        if self.path in ("/skin/smart_2016_nml.png", "/skin/smart_2016_pushed.png"):
-            with open(os.path.join(SKIN, self.path.rpartition("/")[2]), "rb") as f:
+        if self.path in SKIN_FILES:
+            with open(os.path.join(SKIN, SKIN_FILES[self.path]), "rb") as f:
                 self._reply(200, f.read(), "image/png")
             return
         self._reply(200, PAGE.encode(), "text/html; charset=utf-8")

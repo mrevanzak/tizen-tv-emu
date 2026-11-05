@@ -36,11 +36,14 @@ if [ ! -d "$SRC" ]; then
   mv "$SRC.tmp" "$SRC"
 fi
 
-if [ ! -f "$SRC/build/build.ninja" ]; then
+# i386 for the 32-bit TV images (Tizen 9.0 and older): YaGL reads guest pointers at the target's width.
+CONFIGURE_ARGS="--target-list=x86_64-softmmu,i386-softmmu --enable-slirp --disable-docs --disable-werror --disable-sdl --disable-gtk"
+if [ "$(cat "$SRC/build/.configure-args" 2>/dev/null)" != "$CONFIGURE_ARGS" ]; then
   mkdir -p "$SRC/build"
-  (cd "$SRC/build" && ../configure --target-list=x86_64-softmmu --enable-slirp \
-    --disable-docs --disable-werror --disable-sdl --disable-gtk)
+  # shellcheck disable=SC2086 # CONFIGURE_ARGS is a list of flags
+  (cd "$SRC/build" && ../configure $CONFIGURE_ARGS)
+  echo "$CONFIGURE_ARGS" > "$SRC/build/.configure-args"
 fi
-ninja -C "$SRC/build" qemu-system-x86_64 qemu-img
+ninja -C "$SRC/build" qemu-system-x86_64 qemu-system-i386 qemu-img
 
-echo "Built $SRC/build/qemu-system-x86_64. Start the TV with ./run.sh"
+echo "Built QEMU in $SRC/build. Start the TV with ./run.sh"
