@@ -41,7 +41,7 @@ KERNEL="$PLATFORM/emulator/data/kernel/bzImage.$ARCH"
 SKIN=$(ls -d "$PLATFORM"/emulator-resources/skins/*/controller/"Smart(2016)" "$PLATFORM"/emulator-resources/skins/*/controller/* 2>/dev/null | head -1)
 
 # One folder per TV version, so each keeps its own disk and installed apps.
-VM="${TIZEN_TV_EMU_HOME:-$HOME/.tizen-tv-emu/$VERSION}"
+VM="${TIZEN_TV_EMU_HOME:-$HERE/vms/$VERSION}"
 
 # The disks are thin overlays on Samsung's images, so the TV keeps its installed apps.
 mkdir -p "$VM"

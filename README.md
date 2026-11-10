@@ -50,7 +50,7 @@ The Smart Hub home screen appears after about 90 seconds. Press Ctrl+C in the te
 
 `run.sh` boots the newest TV image installed. For another one: `TIZEN_TV_VERSION=6.0 ./run.sh`.
 
-Each TV version keeps its disks in `~/.tizen-tv-emu/<version>`. To keep them somewhere else, set `TIZEN_TV_EMU_HOME`; if Tizen Studio isn't in `~/tizen-studio`, set `TIZEN_STUDIO`. The disks are thin overlays on Samsung's images, so installed apps persist. Delete a version's folder to start that TV over.
+Each TV version keeps its disks in `vms/<version>` next to `run.sh` (git ignores it). To keep them somewhere else, set `TIZEN_TV_EMU_HOME`; if Tizen Studio isn't in `~/tizen-studio`, set `TIZEN_STUDIO`. The disks are thin overlays on Samsung's images, so installed apps persist. Delete a version's folder to start that TV over.
 
 ## Controlling the TV
 
